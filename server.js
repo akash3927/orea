@@ -8,6 +8,7 @@ const server = http.createServer(app);
 const port = process.env.port || 3000;
 const socketio = require('socket.io');
 const formatMessage = require('./utils/messages');
+const { userJoin, getCurrentUser } = require('./utils/users');
 const io = socketio(server, {
 	cors: {
 		origin: '*',
@@ -27,14 +28,19 @@ io.on('connection', (socket) => {
 	// console.log('socket is working>>>>>');
 
 	socket.on('joinRoom', ({ username, room }) => {
+		const user = userJoin(socket.id, username, room);
+		socket.join(user.room);
+
 		//for single client
 		socket.emit('message', formatMessage(botName, 'welcome to orea'));
 
 		//for everyone except the users connect
-		socket.broadcast.emit(
-			'message',
-			formatMessage(botName, 'user has joined the chat'),
-		);
+		socket.broadcast
+			.to(user.room)
+			.emit(
+				'message',
+				formatMessage(botName, `${user.username} has joined the chat`),
+			);
 	});
 
 	//for all the users
@@ -44,7 +50,8 @@ io.on('connection', (socket) => {
 
 	//for chatmessages
 	socket.on('chatMessage', (msg) => {
-		io.emit('message', formatMessage('USER', msg));
+		const user = getCurrentUser(socket.id);
+		io.to(user.room).emit('message', formatMessage(user.username, msg));
 	});
 	socket.on('disconnect', () => {
 		io.emit('message', formatMessage(botName, 'user left the chat'));
