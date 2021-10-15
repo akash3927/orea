@@ -23,7 +23,7 @@ app.use(express.static(path.join(__dirname, 'public'))); //static path of folder
 //run when client connects
 
 io.on('connection', (socket) => {
-	console.log('socket is working>>>>>');
+	// console.log('socket is working>>>>>');
 
 	//for single client
 	socket.emit('message', 'welcome to orea');
@@ -33,6 +33,10 @@ io.on('connection', (socket) => {
 
 	//for all the users
 	//io.emit()
+
+	socket.on(' disconnect', () => {
+		io.emit('message', 'user left the chat');
+	});
 });
 
 server.listen(port, () => {
